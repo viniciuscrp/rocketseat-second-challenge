@@ -10,19 +10,72 @@ app.use(cors());
 const users = [];
 
 function checksExistsUserAccount(request, response, next) {
-  // Complete aqui
+  const username = request.headers['username'];
+  const user = users.filter((user) => user.username === username)[0];
+
+  if (!user) {
+    return response.status(404).json({ error: "Username not found" });
+  }
+
+  request.user = user;
+
+  return next();
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
-  // Complete aqui
+  const { user } = request;
+
+  if (user && !user.pro && user.todos.length === 10) {
+    return response.status(403).json({ error: "Todo limit exceeded" });
+  }
+
+  return next();
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
+  const username = request.headers['username'];
+  const id = request.params.id;
+  const user = users.filter((user) => user.username === username)[0];
+
+  if (!user) {
+    return response.status(404).json({ error: "User not found" });
+  }
+
+  const regexExp = /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi;
+
+  if (!regexExp.test(id)) {
+    return response.status(400).json({ error: "Invalid id" });
+  }
+
+  const userHasTodoWithId = user.todos.some((todo) => todo.id === id);
+
+  if (!userHasTodoWithId) {
+    return response.status(404).json({ error: "The id does not belong to any of the user todos" });
+  }
+
+  const todo = user.todos.filter((todo) => todo.id === id)[0];
+
+  if (!todo) {
+    return response.status(404).json({ error: "Todo not found" });
+  }
+
+  request.todo = todo;
+  request.user = user;
+
+  return next();
 }
 
 function findUserById(request, response, next) {
-  // Complete aqui
+  const id = request.params.id;
+  const user = users.filter((user) => user.id === id)[0];
+
+  if (!user) {
+    return response.status(404).json({ error: "User not found " });
+  }
+
+  request.user = user;
+
+  return next();
 }
 
 app.post('/users', (request, response) => {
